@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Augustin-LouisCauchy/blog-MERN#readme",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "express": "^4.19.2",
     "express-validator": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
