@@ -1,11 +1,8 @@
 import express, { json } from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
 import mongoose from "mongoose";
-import { validationResult } from "express-validator";
 import { registerValidation } from "./validations/auth.js";
-import UserModel from "./models/User.js";
 import checkAuth from "./utils/checkAuth.js";
+import * as UserContoller from "./controllers/UserContoller.js";
 
 mongoose
   .connect(
@@ -18,72 +15,11 @@ const app = express();
 
 app.use(express.json());
 
-app.post("/auth/login", async (req, res) => {
-  try {
-    const user = await UserModel.findOne({ email: req.body.email });
+app.post("/auth/login", UserContoller.login);
 
-    if (!user) {
-      return res.status(404).json({
-        message: "Пользватель не найден",
-      });
-    }
+app.post("/auth/register", registerValidation, UserContoller.register);
 
-    const isValidPass = await bcrypt.compare(
-      req.body.password,
-      user._doc.passwordHash
-    ); // Проверка на идентичность паролей юзера и тем, что в базе
-
-    if (!isValidPass) {
-      return res.status(400).json({
-        message: "Неверный логин или пароль",
-      });
-    }
-
-    const token = jwt.sign(
-      {
-        _id: user._id,
-      },
-      "secret123",
-      {
-        expiresIn: "30d", // токен будет не валидным через 30 дней
-      }
-    );
-
-    const { passwordHash, ...userData } = user._doc;
-
-    res.json({
-      ...userData,
-      token,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Не удалось авторизоваться",
-    });
-  }
-});
-
-app.post("/auth/register", registerValidation);
-
-app.get("/auth/me", checkAuth, async (req, res) => {
-  try {
-    const user = await UserModel.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({
-        message: "Пользователь не найден",
-      });
-    }
-
-    const { passwordHash, ...userData } = user._doc;
-
-    res.json(userData);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: "Нет доступа",
-    });
-  }
-});
+app.get("/auth/me", checkAuth, UserContoller.getMe);
 
 app.listen(4444, (err) => {
   if (err) {
